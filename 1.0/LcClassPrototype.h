@@ -8,8 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-@interface LcClassPrototype : NSObject
-@property (nonatomic, strong) NSArray *
+@interface LcClassPrototype : NSEnumerator
+@property (nonatomic, strong) NSArray *properties;
+
 -(instancetype)initWithClass:(Class)aClass;
 
 @end

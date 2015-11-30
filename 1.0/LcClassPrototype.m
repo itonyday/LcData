@@ -7,12 +7,15 @@
 //
 
 #import "LcClassPrototype.h"
+#import "LcProperty.h"
 #import <objc/runtime.h>
 
 
 @implementation LcClassPrototype
 {
     Class _theClass;
+    NSMutableArray *_allProp;
+    int _currIndex;
 }
 
 -(instancetype)init
@@ -23,30 +26,54 @@
 -(instancetype)initWithClass:(Class)aClass
 {
     self = [super init];
-    _theClass = aClass;
+    if (self) {
+        _theClass = aClass;
+        [self load];
+    }
     
     return self;
 }
 
-- (NSArray *)allPropertyNames
+-(NSArray *)properties
+{
+    return _allProp;
+}
+
+- (void)load
 {
     unsigned count;
     objc_property_t *properties = class_copyPropertyList(_theClass, &count);
     
-    NSMutableArray *rv = [NSMutableArray array];
+    _allProp = [NSMutableArray array];
     
     unsigned i;
     for (i = 0; i < count; i++)
     {
-        objc_property_t property = properties[i];
-        NSString *name = [NSString stringWithUTF8String:property_getName(property)];
-        [rv addObject:name];
+        objc_property_t rawProp = properties[i];
+        const char *propAttr = property_getAttributes(rawProp);
+        NSString *rawPropStr = [NSString stringWithUTF8String:propAttr];
+        LcProperty *prop = [[LcProperty alloc] initWithRawPropertyString:rawPropStr];
+        [_allProp addObject:prop];
     }
     
     free(properties);
-    
-    return rv;
 }
 
+#pragma mark enumerator
+-(NSArray *)allObjects
+{
+    return _allProp;
+}
+
+- (id)nextObject
+{
+    if(_currIndex == [_allProp count])
+    {
+        _currIndex = 0;
+        return nil;
+    }
+    
+    return [_allProp objectAtIndex:_currIndex++];
+}
 
 @end
